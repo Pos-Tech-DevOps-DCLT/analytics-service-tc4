@@ -12,18 +12,18 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Copia apenas os pacotes instalados do estágio de build
-COPY --from=builder /root/.local /root/.local
+# Usuário não-root com HOME próprio: os pacotes do pip --user precisam ficar
+# num diretório legível pelo appuser (/root não é). Mesmo padrão do
+# flag-service e da imagem publicada b7e706e-fix2 (correção que estava só no ECR).
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup --home /home/appuser appuser
 
-# Copia o código da aplicação
+COPY --from=builder --chown=appuser:appgroup /root/.local /home/appuser/.local
 # telemetry.py + gunicorn.conf.py: instrumentacao OpenTelemetry (Fase 4)
-COPY app.py telemetry.py gunicorn.conf.py ./
+COPY --chown=appuser:appgroup app.py telemetry.py gunicorn.conf.py ./
 
-# Garante que os binários do pip --user estão no PATH
-ENV PATH=/root/.local/bin:$PATH
+ENV HOME=/home/appuser
+ENV PATH=/home/appuser/.local/bin:$PATH
 
-# Usuário não-root para segurança
-RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 USER appuser
 
 EXPOSE 8005
