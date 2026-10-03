@@ -16,7 +16,8 @@ WORKDIR /app
 COPY --from=builder /root/.local /root/.local
 
 # Copia o código da aplicação
-COPY app.py .
+# telemetry.py + gunicorn.conf.py: instrumentacao OpenTelemetry (Fase 4)
+COPY app.py telemetry.py gunicorn.conf.py ./
 
 # Garante que os binários do pip --user estão no PATH
 ENV PATH=/root/.local/bin:$PATH
